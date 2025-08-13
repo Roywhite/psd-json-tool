@@ -12,7 +12,6 @@
     "xmp",
     "images"
   ],
-  "bin": {},
   "main": "util.js",
   "type": "module",
   "types": "types.d.ts",
@@ -38,6 +37,10 @@
   "homepage": "https://github.com/Roywhite/psd-json-tool#readme",
   "bugs": {
     "url": "https://github.com/Roywhite/psd-json-tool/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "scripts": {},
   "dependencies": {
