@@ -1,0 +1,49 @@
+{
+  "name": "psd-json-tool",
+  "version": "0.1.0",
+  "description": "Convert PSD <-> JSON with a single Util.convert entry.",
+  "keywords": [
+    "psd",
+    "photoshop",
+    "ag-psd",
+    "json",
+    "converter",
+    "layers",
+    "xmp",
+    "images"
+  ],
+  "bin": {},
+  "main": "util.js",
+  "type": "module",
+  "types": "types.d.ts",
+  "exports": {
+    ".": {
+      "import": "./util.js",
+      "types": "./types.d.ts"
+    }
+  },
+  "files": [
+    "util.js",
+    "utils",
+    "types.d.ts",
+    "README.md",
+    "package.json"
+  ],
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Roywhite/psd-json-tool.git"
+  },
+  "homepage": "https://github.com/Roywhite/psd-json-tool#readme",
+  "bugs": {
+    "url": "https://github.com/Roywhite/psd-json-tool/issues"
+  },
+  "scripts": {},
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.77",
+    "ag-psd": "*",
+    "pngjs": "^7.0.0",
+    "canvas": "^3.1.2"
+  }
+}
