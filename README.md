@@ -1,10 +1,13 @@
 # psd-json-tool
 
-将 PSD 与 JSON 互转的极简工具（ESM）。
+将 PSD 与 JSON 互转的极简工具。
 
-- PSD → JSON：图片与二进制资源外置为 PNG，JSON 中记录元信息
-- JSON → PSD：根据 JSON 与资源 PNG 还原
-- 单方法入口：`convert(input, options)` 自动识别输入类型
+## 功能
+
+- **PSD → JSON**：转换 PSD 文件为 JSON，图片自动提取
+- **JSON → PSD**：从 JSON 还原 PSD 文件
+- **图层信息**：自动生成简化的图层信息文件
+- **层级重构**：支持修改图层结构，新增、删除、重命名图层
 
 ## 安装
 
@@ -12,105 +15,87 @@
 npm i psd-json-tool
 ```
 
-注意：在 Node.js 中需要 Canvas 绑定，推荐安装以下其一（本包会优先尝试 `@napi-rs/canvas`，失败回退到 `canvas`）：
-- @napi-rs/canvas（优先，预编译，跨平台更友好）
-- canvas（备用，可能需要本地编译环境）
-
 ## 快速开始
 
 ```js
-import Util, { convert, psdToJson, jsonToPsd } from 'psd-json-tool';
+import { convert } from 'psd-json-tool';
 
-// 1) PSD -> JSON（默认写到 result/）
-convert('A.psd');
+// PSD 转 JSON
+convert('input.psd');
 
-// 2) JSON -> PSD（默认写到 result/）
-convert('result/A.json');
-
-// 3) 自定义输出与资源目录
-convert('A.psd', { outputDir: 'out', assetsDirName: 'imgs' });
-convert('out/A.json', { output: 'build/A.psd' });
+// JSON 转 PSD
+convert('result/input.json');
 ```
 
-也可直接运行仓库中的示例：
-```bash
-node example.js
-```
+## 主要用法
 
-## 路径与目录规则
-- 支持绝对路径与相对路径
-  - 相对路径按当前工作目录（process.cwd()）解析
-- 输出文件 `output`
-  - 若提供，为绝对优先；可为绝对或相对（相对 cwd）
-- 输出目录 `outputDir`
-  - 仅在未提供 `output` 时生效；可为绝对或相对（相对 cwd）
-- 资源目录 `assetsDir`
-  - PSD→JSON：
-    - 若提供绝对路径，直接使用
-    - 若提供相对路径，按“输出 JSON 所在目录”解析
-    - 未提供则使用 `outputDir/assetsDirName`
-  - JSON→PSD：
-    - 优先使用 `options.assetsDir`（绝对或相对“输入 JSON 所在目录”）
-    - 否则使用 `JSON.__meta.assetsDir`（相对于 JSON 文件）
-    - 再否则使用默认 `assetsDirName`（与 JSON 同级目录）
-- JSON 内的 `__meta.assetsDir` 始终写为“相对 JSON 文件”的相对路径（Windows 写入时会统一为正斜杠），便于整体移动
-
-## API
-
-### convert(input, options?)
-- 自动识别输入类型：`.psd` → PSD→JSON，`.json` → JSON→PSD
-- 参数：
-  - input: string
-  - options?: {
-    - output?: string
-    - outputDir?: string
-    - assetsDirName?: string
-    - assetsDir?: string // 指定资源目录（PSD→JSON 相对输出 JSON，JSON→PSD 相对输入 JSON）
-  }
-- 返回：`{ absOut: string }`
-
-### psdToJson(input, options?)
-- 将 PSD 转为 JSON 容器并写出图片资源
-- 参数：`{ output?: string; outputDir?: string; assetsDirName?: string; assetsDir?: string }`
-- 返回：`{ absOut: string }`
-
-### jsonToPsd(input, options?)
-- 将 JSON 容器还原为 PSD
-- 参数：`{ output?: string; outputDir?: string; assetsDir?: string }`
-- 返回：`{ absOut: string }`
-
-### 工具方法（具名导出 & `Util` 中均可用）
-- `initializeAgPsdCanvas()`
-- `ensureDir(dir)`
-- `externalizePsd(psd, assetsDir)` / `hydratePsd(json, assetsDir)`
-- `computeSha256Hex(input)` / `stableStringify(obj)`
-- `toBase64(bufLike)` / `fromBase64ToBuffer(b64)`
-
-## 全局默认配置（可选）
-无需在每次调用传相同参数，可在包级别统一配置：
+### 基本转换
 
 ```js
-import { configure, getDefaults, loadConfigAuto } from 'psd-json-tool';
+// 自定义输出路径
+convert('input.psd', { output: 'output.json' });
 
-configure({ outputDir: 'out', assetsDirName: 'imgs' });
-console.log(getDefaults());
-
-// 或自动从当前目录读取 psdjson.config.json（若存在）
-loadConfigAuto();
+// 自定义资源目录
+convert('input.psd', { assetsDirName: 'images' });
 ```
 
-`psdjson.config.json` 样例：
-```json
-{
-  "outputDir": "out",
-  "assetsDirName": "imgs"
-}
+**参数说明：**
+- `input`: 输入文件路径（PSD 或 JSON）
+- `options`: 可选配置
+  - `output`: 输出文件路径
+  - `outputDir`: 输出目录（仅在未提供 output 时生效）
+  - `assetsDirName`: 资源目录名称（默认 'images'）
+
+**返回值：**
+- `{ absOut: string }` - 输出文件的绝对路径
+
+### 图层层级重构
+
+```js
+import { updateLayersWithSpec } from 'psd-json-tool';
+
+const spec = {
+  id: 13397,              // 要修改的图层 ID
+  name: '新名称',          // 重命名
+  children: [
+    { id: 13569 },        // 保留现有节点
+    { 
+      name: '新增图层',    // 新增节点
+      type: 'pixel',      // 类型
+      image: 'images/new.png'  // 图片路径
+    }
+  ]
+};
+
+updateLayersWithSpec('test.json', 'test.layers.json', spec);
 ```
 
-## 依赖
-- ag-psd：解析/写出 PSD
-- pngjs：读写 PNG
-- @napi-rs/canvas 或 canvas：为 ag-psd 提供 Canvas 能力
+**参数说明：**
+- `containerJsonPath`: 容器 JSON 文件路径
+- `layersJsonPath`: 图层 JSON 文件路径
+- `spec`: 图层规范对象
+  - `id`: 图层 ID（第一层必须提供）
+  - `name`: 图层名称（可选）
+  - `type`: 图层类型（可选）
+  - `image`: 图片路径（可选）
+  - `children`: 子图层数组（可选）
+
+**返回值：**
+- `{ absOut: string, newLayersAbsOut: string }` - 更新后的文件路径
+
+## 重要说明
+
+- **第一层必须有 ID**：`spec.id` 必须指向已存在的图层
+- **children 完全替换**：指定图层的子节点会被完全替换
+- **新增节点自动分配 ID**：不传 ID 的节点会自动分配
+- **保留所有字段**：`name`、`type`、`image` 等字段都会被保留
+
+## 输出文件
+
+- `*.json`：完整的 PSD 数据结构
+- `*.layers.json`：简化的图层信息
+- `images/`：提取的图片资源
 
 ## 许可
+
 MIT

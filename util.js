@@ -7,7 +7,7 @@ import { initializeAgPsdCanvas } from './utils/canvas.js';
 import { ensureDir } from './utils/images.js';
 import { computeSha256Hex, toBase64, fromBase64ToBuffer } from './utils/crypto.js';
 import { stableStringify } from './utils/json.js';
-import { psdToJson, jsonToPsd, externalizePsd, hydratePsd } from './utils/psd-io.js';
+import { psdToJson, jsonToPsd, externalizePsd, hydratePsd, updateLayersWithSpec } from './utils/psd-io.js';
 import { getDefaults, setDefaults, loadConfig, loadConfigAuto } from './utils/config.js';
 
 /**
@@ -71,6 +71,7 @@ const Util = {
   psdToJson,
   jsonToPsd,
   convert,
+  updateLayersWithSpec,
   // 配置相关
   getDefaults,
   configure: setDefaults,
@@ -91,6 +92,7 @@ export {
   psdToJson,
   jsonToPsd,
   convert,
+  updateLayersWithSpec,
   getDefaults,
   setDefaults as configure,
   loadConfig,
