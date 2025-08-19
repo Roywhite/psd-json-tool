@@ -5,6 +5,7 @@ export interface ConvertOptions {
 	output?: string;
 	outputDir?: string;
 	assetsDirName?: string;
+	assetsDir?: string; // 资源目录（绝对或相对输出 JSON 目录）
 }
 
 export interface PsdtJsonOptions {

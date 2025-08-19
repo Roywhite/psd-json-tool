@@ -202,12 +202,11 @@ export function psdToJson(inputPath, optionsOrOutputPath) {
   const defaults = getDefaults();
   const outputDir = options.outputDir || defaults.outputDir;
   const assetsDirName = options.assetsDirName || defaults.assetsDirName;
-  const resultDir = path.resolve(process.cwd(), outputDir);
   const absOut = options.output
     ? path.resolve(process.cwd(), options.output)
     : path.resolve(process.cwd(), path.join(outputDir, baseName + '.json'));
-  // 资源目录优先级：options.assetsDir（相对则基于输出 JSON 所在目录）> 默认 outputDir/assetsDirName
-  let imagesDirAbs = path.join(resultDir, assetsDirName);
+  // 资源目录优先级：options.assetsDir（相对则基于输出 JSON 所在目录）> 默认与 JSON 同级目录下的 assetsDirName
+  let imagesDirAbs = path.resolve(path.dirname(absOut), assetsDirName);
   if (typeof options.assetsDir === 'string' && options.assetsDir) {
     imagesDirAbs = path.isAbsolute(options.assetsDir)
       ? options.assetsDir
@@ -220,8 +219,9 @@ export function psdToJson(inputPath, optionsOrOutputPath) {
   const psd = readPsd(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength));
 
   ensureDir(assetsDir);
-  ensureDir(resultDir);
   ensureDir(imagesDirAbs);
+  // 确保自定义输出路径（若提供）所在目录存在
+  ensureDir(path.dirname(absOut));
 
   const container = {
     __meta: {
@@ -279,7 +279,6 @@ export function jsonToPsd(inputPath, optionsOrOutputPath) {
     : (optionsOrOutputPath && typeof optionsOrOutputPath === 'object' ? optionsOrOutputPath : {});
   const defaults = getDefaults();
   const outputDir = options.outputDir || defaults.outputDir;
-  const resultDir = path.resolve(process.cwd(), outputDir);
   const absOut = options.output
     ? path.resolve(process.cwd(), options.output)
     : path.resolve(process.cwd(), path.join(outputDir, baseName + '.psd'));
@@ -297,7 +296,8 @@ export function jsonToPsd(inputPath, optionsOrOutputPath) {
       ? options.assetsDir
       : path.resolve(path.dirname(absIn), options.assetsDir);
   }
-  try { fs.mkdirSync(resultDir, { recursive: true }); } catch (_) {}
+  // 仅在写入目标前创建其父级目录
+  ensureDir(path.dirname(absOut));
 
   initializeAgPsdCanvas();
 
@@ -315,6 +315,8 @@ export function jsonToPsd(inputPath, optionsOrOutputPath) {
 
   const arrayBuffer = writePsd(hydrated);
   const nodeBuffer = Buffer.from(arrayBuffer);
+  // 确保自定义输出路径（若提供）所在目录存在
+  ensureDir(path.dirname(absOut));
   fs.writeFileSync(absOut, nodeBuffer);
 
   return { absOut };
@@ -521,6 +523,8 @@ export function updateLayersWithSpec(containerJsonPath, layersJsonPath, spec) {
   }
    
   const finalLayersOut = mergeSpecInfo(layersOut, spec);
+  // 确保图层输出文件的父目录存在
+  ensureDir(path.dirname(absLayers));
   fs.writeFileSync(absLayers, JSON.stringify(finalLayersOut, null, 2));
 
   return { absOut: absContainer, newLayersAbsOut: absLayers };

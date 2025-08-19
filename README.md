@@ -24,7 +24,7 @@ import { convert } from 'psd-json-tool';
 convert('input.psd');
 
 // JSON 转 PSD
-convert('result/input.json');
+convert('input.json');
 ```
 
 ## 主要用法
@@ -35,16 +35,22 @@ convert('result/input.json');
 // 自定义输出路径
 convert('input.psd', { output: 'output.json' });
 
-// 自定义资源目录
+// 自定义资源目录名称（相对于 JSON 所在目录，默认 'images'）
 convert('input.psd', { assetsDirName: 'images' });
+
+// 自定义资源目录路径（相对路径以 JSON 所在目录为基准）
+convert('input.psd', { output: 'out/foo.json', assetsDir: '../assets' });
 ```
 
 **参数说明：**
 - `input`: 输入文件路径（PSD 或 JSON）
 - `options`: 可选配置
   - `output`: 输出文件路径
-  - `outputDir`: 输出目录（仅在未提供 output 时生效）
-  - `assetsDirName`: 资源目录名称（默认 'images'）
+  - `outputDir`: 输出目录（仅在未提供 `output` 时生效，默认 `'result'`）
+  - `assetsDirName`: 资源目录名称（默认 `'images'`，位于 JSON 同级目录）
+  - `assetsDir`: 资源目录路径。若为相对路径，则基于 JSON 文件所在目录解析；若为绝对路径则直接使用
+
+> 资源目录优先级：`assetsDir` 高于 `assetsDirName`（若指定 `assetsDir`，将忽略 `assetsDirName`）。
 
 **返回值：**
 - `{ absOut: string }` - 输出文件的绝对路径
@@ -94,7 +100,14 @@ updateLayersWithSpec('test.json', 'test.layers.json', spec);
 
 - `*.json`：完整的 PSD 数据结构
 - `*.layers.json`：简化的图层信息
-- `images/`：提取的图片资源
+- `images/`：提取的图片资源（默认与 JSON 同级；可通过 `assetsDirName` 或 `assetsDir` 定制）
+
+## 目录行为
+
+- 未显式指定 `output` 时，输出 JSON/PSD 默认写入 `result/` 目录，且会在写入前按需创建父级目录。
+- 显式指定 `output` 时，仅创建该输出文件的父级目录；不会无条件创建 `result/`。
+- 资源目录默认设置为与 JSON 同级的 `assetsDirName`（默认 `'images'`），亦会按需创建。
+- 若同时提供 `assetsDir` 与 `assetsDirName`，以 `assetsDir` 为准。
 
 ## 许可
 
